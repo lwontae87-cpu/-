@@ -20,6 +20,7 @@ python it_keyword_tracker.py --hours 24 --limit 30 --top 15
 - `--hours`: 최근 N시간 이내 데이터만 사용 (기본값: 24)
 - `--limit`: 소스별 최대 수집 건수 (기본값: 30)
 - `--top`: 출력할 상위 키워드 개수 (기본값: 15)
+- `--no-fallback`: 실시간 소스 실패 시 샘플 데이터 대체 비활성화
 
 ## 출력 예시
 - Top keywords: `ai`, `openai`, `release`, `security` ...
@@ -35,3 +36,4 @@ python it_keyword_tracker.py --hours 24 --limit 30 --top 15
 ## 한계
 - API 응답 지연/차단 시 일부 소스 수집이 실패할 수 있습니다.
 - 단순 빈도 분석 기반이라 문맥적 중요도까지 반영하지는 않습니다.
+- 네트워크가 막힌 환경에서는 내장 샘플 데이터로 동작합니다(기본값).

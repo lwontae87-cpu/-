@@ -57,6 +57,20 @@ STOPWORDS = {
 }
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9+#.-]{1,30}")
+FALLBACK_TITLES = [
+    "OpenAI releases new multimodal model update for developers",
+    "NVIDIA announces next-gen AI chips for data centers",
+    "Apple on-device AI strategy expands across iPhone and Mac",
+    "Google unveils Gemini improvements for search and workspace",
+    "Microsoft Copilot enterprise security and governance updates",
+    "Cybersecurity teams warn of rising ransomware attacks in healthcare",
+    "Rust and WebAssembly adoption grows in backend platforms",
+    "Kubernetes cost optimization becomes top priority for platform teams",
+    "LLM agents enter production with stricter observability requirements",
+    "AI regulation debate intensifies around model transparency",
+    "Zero trust architecture trends accelerate in fintech infrastructure",
+    "Developers compare vector databases for RAG performance",
+]
 
 
 @dataclass
@@ -162,6 +176,12 @@ def collect_items(limit_per_source: int) -> list[Item]:
     return all_items
 
 
+def fallback_items(limit: int) -> list[Item]:
+    now = dt.datetime.now(tz=dt.timezone.utc)
+    selected = FALLBACK_TITLES[: max(1, min(limit, len(FALLBACK_TITLES)))]
+    return [Item(title=title, source="fallback", created_at=now) for title in selected]
+
+
 def filter_by_hours(items: Iterable[Item], hours: int) -> list[Item]:
     threshold = dt.datetime.now(tz=dt.timezone.utc) - dt.timedelta(hours=hours)
     return [item for item in items if item.created_at >= threshold]
@@ -220,6 +240,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--hours", type=int, default=24, help="최근 N시간")
     parser.add_argument("--limit", type=int, default=30, help="소스별 최대 수집 건수")
     parser.add_argument("--top", type=int, default=15, help="상위 키워드 개수")
+    parser.add_argument(
+        "--no-fallback",
+        action="store_true",
+        help="네트워크 수집 실패 시 샘플 데이터 대체를 비활성화",
+    )
     return parser.parse_args(argv)
 
 
@@ -230,6 +255,9 @@ def main(argv: list[str]) -> int:
         return 2
 
     items = collect_items(limit_per_source=args.limit)
+    if not items and not args.no_fallback:
+        print("실시간 소스 수집에 실패해 샘플 데이터로 대체합니다.", file=sys.stderr)
+        items = fallback_items(limit=args.limit)
     recent_items = filter_by_hours(items, hours=args.hours)
     keywords = extract_keywords((item.title for item in recent_items), top_n=args.top)
 
